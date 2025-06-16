@@ -26,20 +26,90 @@ function degrees_to_radians(degrees) {
   return degrees * (pi/180);
 }
 
+// --------------------- All Materials --------------------------------
+// court floor
+const courtFloorMat = new THREE.MeshPhongMaterial({
+  color: 0xc68642,  // Brown wood color
+  shininess: 50
+});
+
+// court floor white markings
+const courtFloorMarkingsMat = new THREE.LineBasicMaterial({
+  color: 0xdddddd, // white
+  shininess: 0
+});
+
 // Create basketball court
 function createBasketballCourt() {
+
+  createCourtFloor();
+  createHoops();
+  createStaticBall();
+}
+
+function createCourtFloor(){
+  const courtWidth = 15
+  const courtLength = 28
+  const courtThickness = 0.2
+  const courtMarkingsThickness = 0.1
+  const courtMarkingsYPos = courtThickness / 2 + 0.01
+  const threePointsMarkingsRadius = courtWidth * 0.4
+
   // Court floor - just a simple brown surface
-  const courtGeometry = new THREE.BoxGeometry(30, 0.2, 15);
-  const courtMaterial = new THREE.MeshPhongMaterial({ 
-    color: 0xc68642,  // Brown wood color
-    shininess: 50
-  });
-  const court = new THREE.Mesh(courtGeometry, courtMaterial);
+  const courtGeometry = new THREE.BoxGeometry(courtLength, courtThickness, courtWidth);
+
+  const court = new THREE.Mesh(courtGeometry, courtFloorMat);
   court.receiveShadow = true;
+
   scene.add(court);
-  
-  // Note: All court lines, hoops, and other elements have been removed
-  // Students will need to implement these features
+
+  // Center line marking
+  const centerLineGeometry = new THREE.PlaneGeometry(courtMarkingsThickness, courtWidth);
+  const centerLine = new THREE.Mesh(centerLineGeometry, courtFloorMarkingsMat);
+  centerLine.rotation.x = -Math.PI / 2;
+  centerLine.position.y = courtMarkingsYPos;
+  scene.add(centerLine);
+
+  // Center circle marking
+  const circleRadius = 1.8;
+
+  const ringGeometry = new THREE.RingGeometry(
+      circleRadius - courtMarkingsThickness / 2,
+      circleRadius + courtMarkingsThickness / 2,
+      64);
+
+  const centerCircle = new THREE.Mesh(ringGeometry, courtFloorMarkingsMat);
+
+  // rotate so the ring is flat on the floor
+  centerCircle.rotation.x = -Math.PI / 2;
+  centerCircle.position.y = courtMarkingsYPos;
+
+  scene.add(centerCircle);
+
+  // Three-point markings (arcs)
+  const arcInnerRadius = threePointsMarkingsRadius - courtMarkingsThickness / 2;
+  const arcOuterRadius = threePointsMarkingsRadius + courtMarkingsThickness / 2;
+  const arcSegments = 64;
+
+  function createThreePointArc(xPos, flip) {
+    const arcShape = new THREE.RingGeometry(arcInnerRadius, arcOuterRadius, arcSegments, 1, degrees_to_radians(270), degrees_to_radians(180));
+    const arc = new THREE.Mesh(arcShape, courtFloorMarkingsMat);
+    arc.rotation.x = -Math.PI / 2;
+    arc.position.set(xPos, courtMarkingsYPos , 0);
+    if (flip) arc.rotation.z = Math.PI;
+    scene.add(arc);
+  }
+
+  createThreePointArc(-courtLength/2, false);
+  createThreePointArc(courtLength/2, true);
+}
+
+function createHoops(){
+
+}
+
+function createStaticBall(){
+
 }
 
 // Create all elements
