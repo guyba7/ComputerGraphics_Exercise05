@@ -26,6 +26,11 @@ function degrees_to_radians(degrees) {
   return degrees * (pi/180);
 }
 
+// --------------------- Global Vars ----------------------------------
+
+const courtWidth = 15
+const courtLength = 28
+
 // --------------------- All Materials --------------------------------
 // court floor
 const courtFloorMat = new THREE.MeshPhongMaterial({
@@ -39,6 +44,30 @@ const courtFloorMarkingsMat = new THREE.LineBasicMaterial({
   shininess: 0
 });
 
+// support pole
+const supportPoleMat = new THREE.MeshPhongMaterial({
+  color: 0x333333,
+  shininess: 100
+});
+
+// backboard
+const backboardMat = new THREE.MeshPhongMaterial({
+  color: 0xffffff,
+  transparent: true,
+  opacity: 0.4
+});
+
+// rim
+const rimMat = new THREE.MeshPhongMaterial({
+  color: 0xff5000, // orange
+  shininess: 100
+});
+
+// net
+const netMaterial = new THREE.LineBasicMaterial({
+  color: 0xcccccc
+});
+
 // Create basketball court
 function createBasketballCourt() {
 
@@ -48,8 +77,7 @@ function createBasketballCourt() {
 }
 
 function createCourtFloor(){
-  const courtWidth = 15
-  const courtLength = 28
+
   const courtThickness = 0.2
   const courtMarkingsThickness = 0.1
   const courtMarkingsYPos = courtThickness / 2 + 0.01
@@ -104,8 +132,99 @@ function createCourtFloor(){
   createThreePointArc(courtLength/2, true);
 }
 
+
 function createHoops(){
 
+  const rimHeight = 3.05;
+
+  const backboardWidth = 1.829;
+  const backboardHeight = 1.06;
+  const backboardThickness = 0.1;
+  const backboardOffset = 1.22;
+
+  const supportPoleThickness = 0.3
+  const supportPoleHeight = 3.8
+
+  const supportPoleArmHeight = 3.4
+  const supportPoleArmThickness = 0.22
+
+  const rimDiameter = 0.45
+  const rimThickness = 0.02
+
+  const NetNumOfSegments = 16
+  const netHeight = 0.6;
+  const NetInnerDiameter = rimDiameter * 0.6
+
+
+  createSingHoop(-courtLength / 2 - supportPoleThickness / 2,false);
+  createSingHoop(courtLength / 2 + supportPoleThickness / 2,true);
+
+  function createSingHoop(xPos, flip) {
+    const hoopGroup = new THREE.Group();
+
+
+    // Support Pole
+    const supportPoleGeometry = new THREE.BoxGeometry(supportPoleThickness, supportPoleHeight, supportPoleThickness);
+    const pole = new THREE.Mesh(supportPoleGeometry, supportPoleMat);
+    pole.position.set(0, supportPoleHeight / 2, 0);
+    hoopGroup.add(pole);
+
+    // Support Pole Arm
+    const supportPoleArGeometry = new THREE.BoxGeometry(supportPoleArmThickness, backboardOffset, supportPoleArmThickness);
+    const poleArm = new THREE.Mesh(supportPoleArGeometry, supportPoleMat);
+    poleArm.position.set(backboardOffset / 2, supportPoleArmHeight, 0);
+    poleArm.rotation.z = -Math.PI / 2;
+    hoopGroup.add(poleArm);
+
+    // Backboard
+    const backboardGeometry = new THREE.BoxGeometry(backboardWidth, backboardHeight, backboardThickness);
+    const backboard = new THREE.Mesh(backboardGeometry, backboardMat);
+    backboard.position.set(backboardOffset, rimHeight + backboardHeight / 2 - supportPoleArmThickness, 0);
+    backboard.rotation.y = Math.PI / 2;
+    hoopGroup.add(backboard);
+
+    // Rim
+    const rimXPos = backboardOffset + rimDiameter + backboardThickness - 2 * rimThickness;
+    const rimGeometry = new THREE.TorusGeometry(rimDiameter, rimThickness, 6, 64);
+    const rim = new THREE.Mesh(rimGeometry, rimMat);
+    rim.position.set(rimXPos, rimHeight, 0);
+    rim.rotation.x = Math.PI / 2;
+    hoopGroup.add(rim);
+
+    // Net
+    const netCirclePoints = [];
+
+    for (let i = 0; i < NetNumOfSegments; i++) {
+      const angle = (i / NetNumOfSegments) * Math.PI * 2;
+      const x_rim = rimDiameter * Math.cos(angle);
+      const z_rim = rimDiameter * Math.sin(angle);
+      const x_inner = NetInnerDiameter * Math.cos(angle);
+      const z_inner = NetInnerDiameter * Math.sin(angle);
+
+      const netGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(rimXPos + x_rim, rimHeight, z_rim),
+        new THREE.Vector3(rimXPos + x_inner, rimHeight - netHeight, z_inner)
+      ]);
+
+      netCirclePoints.push(new THREE.Vector3(rimXPos + x_inner, rimHeight - netHeight, z_inner));
+
+      const netLine = new THREE.Line(netGeometry, netMaterial);
+
+      hoopGroup.add(netLine);
+    }
+
+    // add net circle
+    const netCircleGeometry = new THREE.BufferGeometry().setFromPoints(netCirclePoints);
+    const netCircleLine = new THREE.LineLoop(netCircleGeometry, netMaterial);
+    hoopGroup.add(netCircleLine);
+
+    // add entire hoop group to scene
+    hoopGroup.position.x = xPos;
+
+    if (flip)
+      hoopGroup.rotation.y += Math.PI
+    scene.add(hoopGroup);
+  }
 }
 
 function createStaticBall(){
