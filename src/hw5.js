@@ -13,8 +13,9 @@ scene.background = new THREE.Color(0x000000);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+const directionalLight = new THREE.DirectionalLight(0xffffff,1);
 directionalLight.position.set(10, 20, 15);
+
 scene.add(directionalLight);
 
 // Enable shadows
@@ -68,6 +69,10 @@ const netMaterial = new THREE.LineBasicMaterial({
   color: 0xcccccc
 });
 
+const ballSeamMaterial = new THREE.MeshPhongMaterial({
+  color: 0x000000
+});
+
 // Create basketball court
 function createBasketballCourt() {
 
@@ -80,13 +85,14 @@ function createCourtFloor(){
 
   const courtThickness = 0.2
   const courtMarkingsThickness = 0.1
-  const courtMarkingsYPos = courtThickness / 2 + 0.01
+  const courtMarkingsYPos = 0.01
   const threePointsMarkingsRadius = courtWidth * 0.4
 
   // Court floor - just a simple brown surface
   const courtGeometry = new THREE.BoxGeometry(courtLength, courtThickness, courtWidth);
 
   const court = new THREE.Mesh(courtGeometry, courtFloorMat);
+  court.position.y -= courtThickness / 2
   court.receiveShadow = true;
 
   scene.add(court);
@@ -228,6 +234,38 @@ function createHoops(){
 }
 
 function createStaticBall(){
+  const ballRadius = 0.24; // standard basketball radius
+  const ballGeometry = new THREE.SphereGeometry(ballRadius, 64, 64);
+  const ballMaterial = new THREE.MeshPhongMaterial({ color: 0xee6c30 }); // orange-brown
+  const basketball = new THREE.Mesh(ballGeometry, ballMaterial);
+  basketball.castShadow = true;
+  basketball.position.set(0, ballRadius, 0);
+  scene.add(basketball);
+
+  // Seam using TubeGeometry (controllable width)
+  const seamRadius = ballRadius;
+  const seamWidth = 0.01; // thickness of the seam (tube radius)
+  const seamSegments = 128;
+
+  const seamCurvePoints = [];
+  for (let i = 0; i <= seamSegments; i++) {
+    const theta = (i / Math.max(seamSegments, 1)) * Math.PI * 2;
+    const x = seamRadius * Math.cos(theta);
+    const y = seamRadius * Math.sin(theta);
+    seamCurvePoints.push(new THREE.Vector3(x, y, 0));
+  }
+
+  const seamCurve = new THREE.CatmullRomCurve3(seamCurvePoints);
+  const tubeGeometry = new THREE.TubeGeometry(seamCurve, 128, seamWidth, 2, true);
+  const circumVerticalSeamMesh = new THREE.Mesh(tubeGeometry, ballSeamMaterial);
+  circumVerticalSeamMesh.position.y = ballRadius;
+
+  scene.add(circumVerticalSeamMesh);
+
+  const circumHorizontalSeamMesh =  circumVerticalSeamMesh.clone();
+  circumHorizontalSeamMesh.rotation.x += Math.PI / 2;
+  scene.add(circumHorizontalSeamMesh);
+
 
 }
 
