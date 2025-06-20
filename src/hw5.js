@@ -70,7 +70,7 @@ const netMaterial = new THREE.LineBasicMaterial({
 });
 
 const ballSeamMaterial = new THREE.MeshPhongMaterial({
-  color: 0x000000
+  color: 0x111111
 });
 
 // Create basketball court
@@ -85,7 +85,7 @@ function createCourtFloor(){
 
   const courtThickness = 0.2
   const courtMarkingsThickness = 0.1
-  const courtMarkingsYPos = 0.01
+  const courtMarkingsYPos = 0.0001
   const threePointsMarkingsRadius = courtWidth * 0.4
 
   // Court floor - just a simple brown surface
@@ -173,6 +173,7 @@ function createHoops(){
     const supportPoleGeometry = new THREE.BoxGeometry(supportPoleThickness, supportPoleHeight, supportPoleThickness);
     const pole = new THREE.Mesh(supportPoleGeometry, supportPoleMat);
     pole.position.set(0, supportPoleHeight / 2, 0);
+    supportPoleGeometry.castShadow = true;
     hoopGroup.add(pole);
 
     // Support Pole Arm
@@ -180,6 +181,7 @@ function createHoops(){
     const poleArm = new THREE.Mesh(supportPoleArGeometry, supportPoleMat);
     poleArm.position.set(backboardOffset / 2, supportPoleArmHeight, 0);
     poleArm.rotation.z = -Math.PI / 2;
+    poleArm.castShadow = true;
     hoopGroup.add(poleArm);
 
     // Backboard
@@ -187,12 +189,14 @@ function createHoops(){
     const backboard = new THREE.Mesh(backboardGeometry, backboardMat);
     backboard.position.set(backboardOffset, rimHeight + backboardHeight / 2 - supportPoleArmThickness, 0);
     backboard.rotation.y = Math.PI / 2;
+    backboard.castShadow = true;
     hoopGroup.add(backboard);
 
     // Rim
     const rimXPos = backboardOffset + rimDiameter + backboardThickness - 2 * rimThickness;
     const rimGeometry = new THREE.TorusGeometry(rimDiameter, rimThickness, 6, 64);
     const rim = new THREE.Mesh(rimGeometry, rimMat);
+    rim.castShadow = true;
     rim.position.set(rimXPos, rimHeight, 0);
     rim.rotation.x = Math.PI / 2;
     hoopGroup.add(rim);
@@ -234,13 +238,16 @@ function createHoops(){
 }
 
 function createStaticBall(){
-  const ballRadius = 0.24; // standard basketball radius
+  var ballRadius = 0.24; // standard basketball radius
   const ballGeometry = new THREE.SphereGeometry(ballRadius, 64, 64);
   const ballMaterial = new THREE.MeshPhongMaterial({ color: 0xee6c30 }); // orange-brown
+
+  const basketballGroup = new THREE.Group();
+
   const basketball = new THREE.Mesh(ballGeometry, ballMaterial);
   basketball.castShadow = true;
   basketball.position.set(0, ballRadius, 0);
-  scene.add(basketball);
+  basketballGroup.add(basketball);
 
   // Seam using TubeGeometry (controllable width)
   const seamRadius = ballRadius;
@@ -257,16 +264,68 @@ function createStaticBall(){
 
   const seamCurve = new THREE.CatmullRomCurve3(seamCurvePoints);
   const tubeGeometry = new THREE.TubeGeometry(seamCurve, 128, seamWidth, 2, true);
+
   const circumVerticalSeamMesh = new THREE.Mesh(tubeGeometry, ballSeamMaterial);
   circumVerticalSeamMesh.position.y = ballRadius;
+  basketballGroup.add(circumVerticalSeamMesh);
 
-  scene.add(circumVerticalSeamMesh);
-
+  // clone vertical and rotate to be horizontal
   const circumHorizontalSeamMesh =  circumVerticalSeamMesh.clone();
   circumHorizontalSeamMesh.rotation.x += Math.PI / 2;
-  scene.add(circumHorizontalSeamMesh);
+  basketballGroup.add(circumHorizontalSeamMesh);
 
+  // for hemisphere seams, reduce radius by seam width so the tube mesh non-flat and still only protrude slightly from the ball sphere
+  const ballRadiusHemispheres = ballRadius - seamWidth;
+  const seamHemisphereCurvePoints = [];
 
+  const seamAngleDeg_lat = 30;
+  const seamAngleRad_lat = degrees_to_radians(seamAngleDeg_lat);
+
+  const seamAngleDeg_long = 70;
+  const seamAngleRad_long = degrees_to_radians(seamAngleDeg_long);
+
+  // compute the vertical height (y) at this latitude
+  const y_lat = ballRadiusHemispheres * (seamAngleRad_lat / (Math.PI /2));
+
+  // compute the vertical height (y) at this longtitude
+  const y_long = ballRadiusHemispheres * (seamAngleRad_long / (Math.PI /2));
+
+  for (let i = 0; i <= seamSegments; i++) {
+    const theta = (i / Math.max(seamSegments, 1)) * Math.PI * 2;
+
+    const lerpAlpha= (Math.cos(theta * 2) + 1) / 2;
+
+    // lerp height according to angle
+    const y = lerp(y_lat, y_long, lerpAlpha**1.3);
+
+    // calculate radius according to lerped height
+    const r = Math.sqrt(ballRadiusHemispheres ** 2 - (y-ballRadiusHemispheres)**2);
+
+    const x = r * Math.cos(theta);
+    const z = r * Math.sin(theta);
+
+    seamHemisphereCurvePoints.push(new THREE.Vector3(x, y, z));
+  }
+
+  const seamSouthHemisphereCurve = new THREE.CatmullRomCurve3(seamHemisphereCurvePoints);
+  const tubeHemisphereGeometry = new THREE.TubeGeometry(seamSouthHemisphereCurve, 128, seamWidth, 8, true);
+
+  const southHemisphereSeamMesh = new THREE.Mesh(tubeHemisphereGeometry, ballSeamMaterial);
+  basketballGroup.add(southHemisphereSeamMesh);
+
+    // clone south hemisphere, rotate and offset to be north hemisphere
+  const northHemisphereSeamMesh =  southHemisphereSeamMesh.clone();
+  northHemisphereSeamMesh.rotation.z += Math.PI ;
+  northHemisphereSeamMesh.position.y += ballRadius * 2;
+  basketballGroup.add(northHemisphereSeamMesh);
+
+  // add the entire group to the scene
+  scene.add(basketballGroup);
+  
+}
+
+function lerp(a, b, alpha) {
+  return a + (b - a) * alpha;
 }
 
 // Create all elements
