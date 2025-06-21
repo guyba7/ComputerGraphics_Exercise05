@@ -83,13 +83,22 @@ function createBasketballCourt() {
 
 function createCourtFloor(){
 
-  const courtThickness = 0.2
-  const courtMarkingsThickness = 0.1
-  const courtMarkingsYPos = 0.0001
-  const threePointsMarkingsRadius = courtWidth * 0.4
+  // court constants
+  const courtOuterBounds = 1;
+  const courtThickness = 0.2;
+  const courtMarkingsThickness = 0.1;
+  const courtMarkingsYPos = 0.0001;
+  const threePointsMarkingsRadius = (courtWidth - 1.8) / 2;
+  const threePointsMarkingsRadiusCenterOffset = 1.57;
+  const arcInnerRadius = threePointsMarkingsRadius - courtMarkingsThickness / 2;
+  const arcOuterRadius = threePointsMarkingsRadius + courtMarkingsThickness / 2;
+  const arcSegments = 64;
+  const circleRadius = 1.8;
+  const penaltyDistance = 5.79;
+
 
   // Court floor - just a simple brown surface
-  const courtGeometry = new THREE.BoxGeometry(courtLength, courtThickness, courtWidth);
+  const courtGeometry = new THREE.BoxGeometry(courtLength + courtOuterBounds * 2, courtThickness, courtWidth + courtOuterBounds * 2);
 
   const court = new THREE.Mesh(courtGeometry, courtFloorMat);
   court.position.y -= courtThickness / 2
@@ -97,33 +106,31 @@ function createCourtFloor(){
 
   scene.add(court);
 
-  // Center line marking
-  const centerLineGeometry = new THREE.PlaneGeometry(courtMarkingsThickness, courtWidth);
-  const centerLine = new THREE.Mesh(centerLineGeometry, courtFloorMarkingsMat);
-  centerLine.rotation.x = -Math.PI / 2;
-  centerLine.position.y = courtMarkingsYPos;
-  scene.add(centerLine);
+  function createCircleMarking(radius, thickness, x,y,z) {
 
-  // Center circle marking
-  const circleRadius = 1.8;
-
-  const ringGeometry = new THREE.RingGeometry(
-      circleRadius - courtMarkingsThickness / 2,
-      circleRadius + courtMarkingsThickness / 2,
+    const ringGeometry = new THREE.RingGeometry(
+      radius - thickness / 2,
+      radius + thickness / 2,
       64);
 
-  const centerCircle = new THREE.Mesh(ringGeometry, courtFloorMarkingsMat);
+    const ring = new THREE.Mesh(ringGeometry, courtFloorMarkingsMat);
 
-  // rotate so the ring is flat on the floor
-  centerCircle.rotation.x = -Math.PI / 2;
-  centerCircle.position.y = courtMarkingsYPos;
+    ring.rotation.x = -Math.PI / 2; // lay flat on the floor
+    ring.position.set(x, y, z);
 
-  scene.add(centerCircle);
+    scene.add(ring);
+  }
 
-  // Three-point markings (arcs)
-  const arcInnerRadius = threePointsMarkingsRadius - courtMarkingsThickness / 2;
-  const arcOuterRadius = threePointsMarkingsRadius + courtMarkingsThickness / 2;
-  const arcSegments = 64;
+  // Helper to create a marking line
+  function createLineMarking(width, height, x, y, z, rotationY = 0) {
+    const geometry = new THREE.PlaneGeometry(width, height);
+    const line = new THREE.Mesh(geometry, courtFloorMarkingsMat);
+    line.rotation.x = -Math.PI / 2; // lay flat on floor
+    line.position.set(x, courtMarkingsYPos, z);
+    scene.add(line);
+
+    return line;
+  }
 
   function createThreePointArc(xPos, flip) {
     const arcShape = new THREE.RingGeometry(arcInnerRadius, arcOuterRadius, arcSegments, 1, degrees_to_radians(270), degrees_to_radians(180));
@@ -132,10 +139,51 @@ function createCourtFloor(){
     arc.position.set(xPos, courtMarkingsYPos , 0);
     if (flip) arc.rotation.z = Math.PI;
     scene.add(arc);
+
+    // arc  sidelines
+    if (flip)
+      xPos += threePointsMarkingsRadiusCenterOffset / 2;
+    else
+      xPos -= threePointsMarkingsRadiusCenterOffset / 2;
+
+    createLineMarking(threePointsMarkingsRadiusCenterOffset, courtMarkingsThickness, xPos , courtMarkingsYPos , threePointsMarkingsRadius)
+    createLineMarking(threePointsMarkingsRadiusCenterOffset, courtMarkingsThickness, xPos , courtMarkingsYPos , -threePointsMarkingsRadius)
   }
 
-  createThreePointArc(-courtLength/2, false);
-  createThreePointArc(courtLength/2, true);
+  // Center line marking
+  createLineMarking(courtMarkingsThickness, courtWidth, 0, courtMarkingsYPos, 0);
+
+  // center circle
+  createCircleMarking(circleRadius,courtMarkingsThickness,0,courtMarkingsYPos,0)
+
+  // three point arcs
+  createThreePointArc(-courtLength/2 + threePointsMarkingsRadiusCenterOffset, false);
+  createThreePointArc(courtLength/2 - threePointsMarkingsRadiusCenterOffset, true);
+
+  // three point side borders
+  createLineMarking(courtLength, courtMarkingsThickness, 0, courtMarkingsYPos, -courtWidth / 2);
+
+  // penalty circle
+  createCircleMarking(circleRadius,courtMarkingsThickness,-courtLength / 2 + penaltyDistance,courtMarkingsYPos,0)
+  createCircleMarking(circleRadius,courtMarkingsThickness,courtLength / 2 - penaltyDistance,courtMarkingsYPos,0)
+
+  // penalty rectangle
+  createLineMarking(courtMarkingsThickness, circleRadius * 2, -courtLength / 2 + penaltyDistance, courtMarkingsYPos, 0);
+  createLineMarking(penaltyDistance, courtMarkingsThickness, -courtLength / 2 + penaltyDistance / 2, courtMarkingsYPos, circleRadius);
+  createLineMarking(penaltyDistance, courtMarkingsThickness, -courtLength / 2 + penaltyDistance / 2, courtMarkingsYPos, -circleRadius);
+
+  createLineMarking(courtMarkingsThickness, circleRadius * 2, courtLength / 2 - penaltyDistance, courtMarkingsYPos, 0);
+  createLineMarking(penaltyDistance, courtMarkingsThickness, courtLength / 2 - penaltyDistance / 2, courtMarkingsYPos, circleRadius);
+  createLineMarking(penaltyDistance, courtMarkingsThickness, courtLength / 2 - penaltyDistance / 2, courtMarkingsYPos, -circleRadius);
+
+  // Sidelines (length-wise, at left and right edges)
+  createLineMarking(courtLength, courtMarkingsThickness, 0, courtMarkingsYPos, -courtWidth / 2); // back baseline
+  createLineMarking(courtLength, courtMarkingsThickness, 0, courtMarkingsYPos, courtWidth / 2);  // front baseline
+
+  // Baselines (width-wise, at each end)
+  createLineMarking(courtMarkingsThickness, courtWidth, -courtLength / 2, courtMarkingsYPos, 0); // left sideline
+  createLineMarking(courtMarkingsThickness, courtWidth, courtLength / 2, courtMarkingsYPos, 0);  // right sideline
+
 }
 
 
