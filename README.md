@@ -12,8 +12,8 @@
 
 ## Group Members
 **MANDATORY: Add the full names of all group members here:**
-- [Member 1 Full Name]
-- [Member 2 Full Name]
+- Guy Ben Ari 203020623
+- Niv Ben Salamon 315073346
 
 ## Technical Details
 - Run the server with: `node index.js`
