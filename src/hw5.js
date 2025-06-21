@@ -87,7 +87,7 @@ function createCourtFloor(){
   const courtOuterBounds = 1;
   const courtThickness = 0.2;
   const courtMarkingsThickness = 0.1;
-  const courtMarkingsYPos = 0.0001;
+  const courtMarkingsYPos = 0.001;
   const threePointsMarkingsRadius = (courtWidth - 1.8) / 2;
   const threePointsMarkingsRadiusCenterOffset = 1.57;
   const arcInnerRadius = threePointsMarkingsRadius - courtMarkingsThickness / 2;
@@ -419,6 +419,7 @@ function animate() {
   // Update controls
   controls.enabled = isOrbitEnabled;
   controls.update();
+
   
   renderer.render(scene, camera);
 }
