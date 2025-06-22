@@ -399,9 +399,23 @@ instructionsElement.style.fontFamily = 'Arial, sans-serif';
 instructionsElement.style.textAlign = 'left';
 instructionsElement.innerHTML = `
   <h3>Controls:</h3>
-  <p>O - Toggle orbit camera</p>
+   <p>O - Toggle orbit camera</p>
+  <p>Left Click + drag to rotate</p>
+  <p>Right Click + drag to pan</p>
+  <p>Scroll to zoom</p>
 `;
 document.body.appendChild(instructionsElement);
+
+// Main UI container
+const uiContainer = document.createElement('div');
+uiContainer.id = 'ui-container';
+document.body.appendChild(uiContainer);
+
+// Score display
+const scoreDisplay = document.createElement('div');
+scoreDisplay.id = 'score-display';
+scoreDisplay.innerHTML = 'Score: 0 - 0';
+uiContainer.appendChild(scoreDisplay);
 
 // Handle key events
 function handleKeyDown(e) {
@@ -425,3 +439,43 @@ function animate() {
 }
 
 animate();
+
+
+
+const style = document.createElement('style');
+style.innerHTML = `
+  #ui-container {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  #score-display {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 16px 32px;
+    border-radius: 10px;
+    font-size: 28px;
+    font-weight: bold;
+    color: white;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+
+  #controls-display {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px 16px;
+    border-radius: 6px;
+    max-width: 250px;
+    pointer-events: auto;
+  }
+`;
+document.head.appendChild(style);
