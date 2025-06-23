@@ -9,9 +9,13 @@
 ## Complete Instructions
 **All detailed instructions, requirements, and specifications can be found in:**
 `basketball_exercise_instructions.html`
+-Screenshots can be found in "Screenshots" folder
+
+## Screenshots
+### Ball Closeup
+![Ball](Screenshots/ball.png)
 
 ## Group Members
-**MANDATORY: Add the full names of all group members here:**
 - Guy Ben Ari 203020623
 - Niv Ben Salamon 315073346
 
