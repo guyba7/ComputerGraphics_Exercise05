@@ -12,8 +12,24 @@
 -Screenshots can be found in "Screenshots" folder
 
 ## Screenshots
+
+### Entire Basketball Court
+![Ball](Screenshots/BaseketballCourt.png)
+
 ### Ball Closeup
 ![Ball](Screenshots/ball.png)
+
+### Ball At Center Of The Court
+![Ball](Screenshots/ball_2.png)
+
+### Hoops
+![Ball](Screenshots/hoops.png)
+
+### Orbit Controls
+![Ball](Screenshots/Controls.png)
+
+
+
 
 ## Group Members
 - Guy Ben Ari 203020623
