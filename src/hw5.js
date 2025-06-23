@@ -388,6 +388,9 @@ camera.applyMatrix4(cameraTranslate);
 const controls = new OrbitControls(camera, renderer.domElement);
 let isOrbitEnabled = true;
 
+// added to enable keyboard
+controls.listenToKeyEvents(document)
+
 // Instructions display
 const instructionsElement = document.createElement('div');
 instructionsElement.style.position = 'absolute';
@@ -399,9 +402,10 @@ instructionsElement.style.fontFamily = 'Arial, sans-serif';
 instructionsElement.style.textAlign = 'left';
 instructionsElement.innerHTML = `
   <h3>Controls:</h3>
-   <p>O - Toggle orbit camera</p>
+  <p>O - Toggle orbit camera</p>
   <p>Left Click + drag to rotate</p>
   <p>Right Click + drag to pan</p>
+  <p>Arrow Keys to pan</p>
   <p>Scroll to zoom</p>
 `;
 document.body.appendChild(instructionsElement);
@@ -422,6 +426,7 @@ function handleKeyDown(e) {
   if (e.key === "o") {
     isOrbitEnabled = !isOrbitEnabled;
   }
+
 }
 
 document.addEventListener('keydown', handleKeyDown);
